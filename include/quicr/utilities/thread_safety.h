@@ -21,6 +21,7 @@
 #define QUICR_TRY_ACQUIRE(...) __attribute__((try_acquire_capability(__VA_ARGS__)))
 #define QUICR_GUARDED_BY(...) __attribute__((guarded_by(__VA_ARGS__)))
 #define QUICR_PT_GUARDED_BY(...) __attribute__((pt_guarded_by(__VA_ARGS__)))
+#define QUICR_NO_THREAD_SAFETY_ANALYSIS __attribute__((no_thread_safety_analysis))
 #else
 #define QUICR_CAPABILITY(name)
 #define QUICR_ACQUIRE(...)
@@ -29,4 +30,5 @@
 #define QUICR_TRY_ACQUIRE(...)
 #define QUICR_GUARDED_BY(...)
 #define QUICR_PT_GUARDED_BY(...)
+#define QUICR_NO_THREAD_SAFETY_ANALYSIS
 #endif

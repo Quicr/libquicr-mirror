@@ -47,9 +47,12 @@ namespace quicr {
         };
 
       public:
-        constexpr void lock() QUICR_ACQUIRE() { mutex_.lock(); }
-        constexpr void unlock() QUICR_RELEASE() { mutex_.unlock(); }
-        constexpr bool try_lock() QUICR_TRY_ACQUIRE(true) { return mutex_.try_lock(); }
+        constexpr void lock() QUICR_ACQUIRE() QUICR_NO_THREAD_SAFETY_ANALYSIS { mutex_.lock(); }
+        constexpr void unlock() QUICR_RELEASE() QUICR_NO_THREAD_SAFETY_ANALYSIS { mutex_.unlock(); }
+        constexpr bool try_lock() QUICR_TRY_ACQUIRE(true) QUICR_NO_THREAD_SAFETY_ANALYSIS
+        {
+            return mutex_.try_lock();
+        }
 
         /**
          * Construct a priority queue
