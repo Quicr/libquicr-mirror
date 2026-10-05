@@ -7,17 +7,25 @@
 // only work when the std synchronization primitives are themselves annotated:
 // guarded_by() requires its guard's type to carry the `capability` attribute, and
 // std::lock_guard must be `scoped_lockable` for the analysis to see a lock being
-// held. libc++ annotates std::mutex/std::lock_guard this way only when its
-// _LIBCPP_HAS_THREAD_SAFETY_ANNOTATIONS support is enabled; libstdc++ never does.
-// Where the std types are unannotated, guarded_by on a plain std::mutex fails to
-// compile (e.g. the Android NDK's libc++, which ships with the annotations off).
+// held. Where the std types are unannotated, guarded_by on a plain std::mutex
+// fails to compile, and a mutex-wrapping lock()/unlock() pair can't be reconciled
+// with the (annotated) inner std::mutex it forwards to.
 //
-// Note _LIBCPP_HAS_THREAD_SAFETY_ANNOTATIONS is *always defined* by modern libc++
-// (as 0 or 1), so gate on its value, not on `defined()` — the latter would enable
-// the attributes even when the value is 0 and std::mutex carries no capability.
+// The host libc++ (macOS/Linux) annotates std::mutex/std::lock_guard whenever the
+// compiler supports the capability attributes; libstdc++ never does. We therefore
+// require libc++ (_LIBCPP_VERSION) rather than probing a dedicated feature macro —
+// there is no portable one (_LIBCPP_HAS_THREAD_SAFETY_ANNOTATIONS does not exist;
+// referencing it left this whole block permanently disabled).
+//
+// The Android NDK is the exception: it ships a libc++ with the annotations off, so
+// std::mutex is *not* a capability there even though _LIBCPP_VERSION is defined and
+// the NDK clang is >= 21. Enabling our attributes against that unannotated std::mutex
+// fails to compile (guarded_by requires a capability-typed guard), so exclude
+// Android explicitly. Thread-safety checking still runs on the macOS CI.
 #include <version>
 
-#if defined(__clang__) && __clang_major__ >= 21 && _LIBCPP_HAS_THREAD_SAFETY_ANNOTATIONS
+#if defined(__clang__) && __clang_major__ >= 21 &&                                                                     \
+  (defined(_LIBCPP_VERSION) || _LIBCPP_HAS_THREAD_SAFETY_ANNOTATIONS) && !defined(__ANDROID__)
 #define QUICR_CAPABILITY(name) __attribute__((capability(name)))
 #define QUICR_ACQUIRE(...) __attribute__((acquire_capability(__VA_ARGS__)))
 #define QUICR_RELEASE(...) __attribute__((release_capability(__VA_ARGS__)))
